@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "LiveWorldTV Extension Prototype",
+  "version": "0.1.0",
+  "description": "Prototype to validate tabCapture + audio processing for YouTube embeds",
+  "permissions": [
+    "tabCapture",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LiveWorldTV Dubbing"
+  }
+}

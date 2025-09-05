@@ -1,0 +1,287 @@
+openapi: 3.0.3
+info:
+  title: LiveWorldTV Catalog API
+  version: 1.0.0
+  description: Channel catalog and discovery service
+  contact:
+    name: LiveWorldTV Team
+    
+servers:
+  - url: https://api.liveworldtv.com/v1
+    description: Production
+  - url: http://localhost:3001/v1
+    description: Development
+
+paths:
+  /channels:
+    get:
+      summary: List channels by country and topic
+      operationId: listChannels
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}$'
+            example: 'US'
+        - name: topic
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TopicType'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Channel list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelListResponse'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /channels/{id}:
+    get:
+      summary: Get channel details
+      operationId: getChannel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Channel details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+        '404':
+          description: Channel not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /streams/{channelId}:
+    get:
+      summary: Get live stream status
+      operationId: getStreamStatus
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stream status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveStreamResponse'
+
+components:
+  schemas:
+    TopicType:
+      type: string
+      enum: [NEWS, SPORTS, MUSIC_DJS]
+      
+    CountryCode:
+      type: string
+      pattern: '^[A-Z]{2}$'
+      example: 'US'
+      
+    Channel:
+      type: object
+      required: [id, name, country, topic, sourceType, sourceUrl]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+          example: 'BBC News Live'
+        country:
+          $ref: '#/components/schemas/CountryCode'
+        topic:
+          $ref: '#/components/schemas/TopicType'
+        sourceType:
+          type: string
+          enum: [YOUTUBE_EMBED, LICENSED]
+        sourceUrl:
+          type: string
+          format: uri
+          example: 'https://www.youtube.com/embed/live_stream?channel=UCelk6aHijZq-GJBBB9YpReA'
+        owner:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+        firstSeen:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+          
+    LiveStream:
+      type: object
+      required: [id, channelId, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        channelId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [LIVE, OFF, UNKNOWN]
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        delaySeconds:
+          type: integer
+          default: 30
+        dvrWindowSec:
+          type: integer
+          default: 10800
+        viewerCount:
+          type: integer
+          default: 0
+        lastChecked:
+          type: string
+          format: date-time
+          
+    Pagination:
+      type: object
+      required: [page, limit, total, hasNext]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+        total:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+          
+    ApiMeta:
+      type: object
+      required: [timestamp, version, requestId]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+          example: 'v1.0.0'
+        requestId:
+          type: string
+          format: uuid
+          
+    ChannelListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [channels, pagination]
+          properties:
+            channels:
+              type: array
+              items:
+                $ref: '#/components/schemas/Channel'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+          
+    ChannelResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/Channel'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+          
+    LiveStreamResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/LiveStream'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+          
+    ErrorResponse:
+      type: object
+      required: [error, meta]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: 'INVALID_COUNTRY'
+            message:
+              type: string
+              example: 'Country code must be 2 uppercase letters'
+            details:
+              type: object
+              additionalProperties: true
+        meta:
+          type: object
+          required: [timestamp, requestId]
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+              format: uuid

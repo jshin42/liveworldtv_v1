@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: LiveWorldTV Ranking API
+  version: 1.0.0
+  description: ML-powered content ranking and recommendations
+  
+servers:
+  - url: https://api.liveworldtv.com/v1
+    description: Production
+  - url: http://localhost:3001/v1
+    description: Development
+
+paths:
+  /ranking/home:
+    get:
+      summary: Get personalized home page rankings
+      operationId: getHomeRanking
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}$'
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: topic
+          in: query
+          schema:
+            $ref: '#/components/schemas/TopicType'
+      responses:
+        '200':
+          description: Ranked channel recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeRankingResponse'
+
+  /ranking/similar:
+    get:
+      summary: Get channels similar to current
+      operationId: getSimilarChannels
+      parameters:
+        - name: channelId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 6
+      responses:
+        '200':
+          description: Similar channel recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimilarChannelsResponse'
+
+  /ranking/stats:
+    post:
+      summary: Submit ranking feedback
+      operationId: submitRankingStats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RankingFeedback'
+      responses:
+        '204':
+          description: Feedback recorded
+        '400':
+          description: Invalid feedback data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TopicType:
+      type: string
+      enum: [NEWS, SPORTS, MUSIC_DJS]
+      
+    RankedChannel:
+      type: object
+      required: [channel, score, rank]
+      properties:
+        channel:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/Channel'
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: 'Ranking confidence score (0-1)'
+        rank:
+          type: integer
+          minimum: 1
+          description: 'Position in ranked list'
+        reason:
+          type: string
+          nullable: true
+          description: 'Explanation for ranking (for debugging)'
+          
+    TopicRail:
+      type: object
+      required: [topic, channels]
+      properties:
+        topic:
+          $ref: '#/components/schemas/TopicType'
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/RankedChannel'
+          maxItems: 6
+          description: 'Maximum 6 channels per topic rail'
+          
+    AutoplaySelection:
+      type: object
+      required: [channel, reason]
+      properties:
+        channel:
+          $ref: '#/components/schemas/RankedChannel'
+        reason:
+          type: string
+          enum: [TRENDING, POPULAR, RANDOM, PERSONALIZED]
+          
+    HomeRanking:
+      type: object
+      required: [rails, autoplay]
+      properties:
+        rails:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicRail'
+          description: 'Topic rails with ranked channels'
+        autoplay:
+          $ref: '#/components/schemas/AutoplaySelection'
+        lastUpdated:
+          type: string
+          format: date-time
+          
+    RankingFeedback:
+      type: object
+      required: [channelId, eventType]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+        channelId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [PLAY_START, DUB_ENABLED, DUB_DISABLED, SEEK, STOP, QUALITY_FEEDBACK]
+        metadata:
+          type: object
+          properties:
+            dubbingLatencyMs:
+              type: integer
+              minimum: 0
+            audioQualityScore:
+              type: number
+              minimum: 1
+              maximum: 5
+            watchTimeSeconds:
+              type: integer
+              minimum: 0
+            extensionVersion:
+              type: string
+          additionalProperties: true
+          
+    HomeRankingResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/HomeRanking'
+        meta:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/ApiMeta'
+          
+    SimilarChannelsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [channels]
+          properties:
+            channels:
+              type: array
+              items:
+                $ref: '#/components/schemas/RankedChannel'
+        meta:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/ApiMeta'
+          
+    ErrorResponse:
+      $ref: './openapi-catalog-service.yaml#/components/schemas/ErrorResponse'

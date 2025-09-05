@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { width: 300px; padding: 20px; }
+    .test-result { margin: 10px 0; padding: 5px; border-radius: 3px; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .pending { background: #fff3cd; color: #856404; }
+  </style>
+</head>
+<body>
+  <h3>Extension Feasibility Test</h3>
+  
+  <button id="testTabCapture">Test Tab Capture</button>
+  
+  <div id="results">
+    <div class="test-result pending">
+      <strong>Test 1:</strong> tabCapture API access
+    </div>
+    <div class="test-result pending">
+      <strong>Test 2:</strong> YouTube embed audio capture
+    </div>
+    <div class="test-result pending">
+      <strong>Test 3:</strong> Web Audio processing latency
+    </div>
+    <div class="test-result pending">
+      <strong>Test 4:</strong> Memory usage impact
+    </div>
+  </div>
+  
+  <div id="summary"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

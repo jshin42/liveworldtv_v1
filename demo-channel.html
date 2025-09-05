@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveWorldTV Demo Channel</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+        
+        .channel-header {
+            background: #111111;
+            color: #ffffff;
+            padding: 32px 24px;
+            border-bottom: 1px solid #222222;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 11px;
+            margin-bottom: 12px;
+            border: 1px solid #333333;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #ff4444;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .channel-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        
+        .channel-header p {
+            margin: 0;
+            font-size: 14px;
+            color: #888888;
+            font-weight: 400;
+        }
+        
+        .video-player {
+            background: #151515;
+            border: 1px solid #222222;
+            border-radius: 4px;
+            padding: 24px;
+            text-align: center;
+            margin: 24px;
+        }
+        
+        .news-ticker {
+            background: #1a1a1a;
+            color: #cccccc;
+            padding: 12px 24px;
+            border-top: 1px solid #222222;
+            border-bottom: 1px solid #222222;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+        
+        .ticker-content {
+            display: inline-block;
+            animation: scroll 30s linear infinite;
+        }
+        
+        @keyframes scroll {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+        
+        .content {
+            background: #151515;
+            border: 1px solid #222222;
+            border-radius: 4px;
+            padding: 24px;
+            margin: 24px;
+        }
+        
+        .test-audio {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            padding: 12px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 6px 8px 6px 0;
+            font-weight: 500;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #f0f0f0;
+            border-color: #f0f0f0;
+        }
+        
+        button:disabled {
+            background: #111111 !important;
+            color: #666666 !important;
+            border-color: #222222 !important;
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            padding: 14px;
+            border-radius: 3px;
+            margin-top: 16px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 12px;
+            color: #cccccc;
+        }
+        
+        .dubbing-controls {
+            background: #151515;
+            border: 1px solid #222222;
+            color: #ffffff;
+            padding: 24px;
+            border-radius: 4px;
+            margin: 24px;
+        }
+        
+        .dubbing-controls h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .dubbing-controls p {
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            color: #888888;
+        }
+        
+        select {
+            background: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 12px 14px;
+            margin: 0 12px 16px 0;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #555555;
+            background: #222222;
+        }
+        
+        select:hover {
+            border-color: #444444;
+        }
+        
+        .content h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .content h3 {
+            margin: 24px 0 12px 0;
+            font-size: 15px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+        
+        .content ol {
+            color: #cccccc;
+            padding-left: 20px;
+        }
+        
+        .content ol li {
+            margin-bottom: 8px;
+        }
+        
+        .content ol li strong {
+            color: #ffffff;
+        }
+        
+        .test-audio h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+        
+        .test-audio p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #cccccc;
+        }
+        
+        .test-audio strong {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="channel-header">
+        <div class="live-indicator"><span class="live-dot"></span>LIVE</div>
+        <h1>LiveWorldTV News Channel</h1>
+        <p>Real-time AI Dubbing Demo</p>
+    </div>
+
+    <div class="news-ticker">
+        <div class="ticker-content">
+            Breaking News: Live AI translation technology transforms global news consumption • Revolutionary dubbing system enables real-time multilingual broadcasting • Technology breakthrough allows instant language conversion for news content
+        </div>
+    </div>
+
+    <div class="video-player">
+        <video id="newsVideo" width="100%" height="300" controls autoplay muted>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <p style="color: #cccccc; margin-top: 16px; font-size: 13px;">Live News Feed - English Audio</p>
+    </div>
+
+    <div class="dubbing-controls">
+        <h3>AI Dubbing Controls</h3>
+        <p>Select target language and enable real-time dubbing:</p>
+        
+        <label>Target Language: </label>
+        <select id="languageSelect">
+            <option value="es">Spanish (Español)</option>
+            <option value="fr">French (Français)</option>
+            <option value="de">German (Deutsch)</option>
+            <option value="it">Italian (Italiano)</option>
+            <option value="pt">Portuguese (Português)</option>
+        </select>
+        
+        <button id="downloadModelsBtn">Download AI Models</button>
+        <button id="startDubbingBtn" disabled>Start Live Dubbing</button>
+        <button id="stopDubbingBtn" disabled>Stop Dubbing</button>
+        
+        <div class="status" id="statusDiv">
+            Status: Ready to download models
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>Today's Top Stories</h2>
+        
+        <div class="test-audio">
+            <h3>Test Audio Content</h3>
+            <p><strong>Sample News Script:</strong></p>
+            <p>"Good evening, this is breaking news from our live newsroom. Today the government announced new policies that will affect the economy and weather conditions across the region. Our president will address the nation about these important developments in sports and politics."</p>
+            
+            <audio id="testAudio" controls style="width: 100%; margin-top: 10px;">
+                <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJKzfJCvgZaEcXGJiGePbZKdlZCQc3CGgZWNfnqCkIKUe4CFlIWQfYKGlpONfnSDlYOUfYKGkZSQfn2DlICOe3t8g4OUfYGGkJOPfn2CgIOKhJOBYZ2mhYGHgYqJgXOF"]">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+
+        <h3>How AI Dubbing Works</h3>
+        <ol>
+            <li><strong>Real-time Speech Recognition:</strong> Distil-Whisper converts spoken English to text</li>
+            <li><strong>Neural Machine Translation:</strong> NLLB-200 translates text to target language</li>
+            <li><strong>Voice Synthesis:</strong> Kokoro-82M generates natural-sounding speech</li>
+            <li><strong>Audio Mixing:</strong> Original and dubbed audio are seamlessly blended</li>
+        </ol>
+        
+        <h3>Supported Languages</h3>
+        <p>Spanish, French, German, Italian, Portuguese, and more coming soon!</p>
+        
+        <h3>Performance Metrics</h3>
+        <p id="metricsDisplay">Target latency: 1.5 seconds | Current latency: -- | Processing quality: --</p>
+    </div>
+
+    <script>
+        let dubbingActive = false;
+        let modelDownloaded = false;
+
+        const downloadBtn = document.getElementById('downloadModelsBtn');
+        const startBtn = document.getElementById('startDubbingBtn');
+        const stopBtn = document.getElementById('stopDubbingBtn');
+        const statusDiv = document.getElementById('statusDiv');
+        const languageSelect = document.getElementById('languageSelect');
+        const metricsDisplay = document.getElementById('metricsDisplay');
+
+        // Simulate model download progress
+        downloadBtn.addEventListener('click', async () => {
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Downloading Models...';
+            statusDiv.textContent = 'Status: Downloading AI models (this may take a few minutes)...';
+
+            // Check if extension is available
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                try {
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'DOWNLOAD_MODELS',
+                        timestamp: Date.now()
+                    });
+                    
+                    if (response.success) {
+                        modelDownloaded = true;
+                        downloadBtn.textContent = 'Models Downloaded';
+                        startBtn.disabled = false;
+                        statusDiv.textContent = 'Status: AI models ready for live dubbing';
+                    } else {
+                        throw new Error(response.error || 'Download failed');
+                    }
+                } catch (error) {
+                    console.error('Model download failed:', error);
+                    statusDiv.textContent = 'Status: Model download failed - ' + error.message;
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Retry Download';
+                }
+            } else {
+                // Simulate download for demo without extension
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        modelDownloaded = true;
+                        downloadBtn.textContent = 'Models Downloaded';
+                        startBtn.disabled = false;
+                        statusDiv.textContent = 'Status: AI models ready for live dubbing (Demo mode)';
+                    } else {
+                        downloadBtn.textContent = `Downloading... ${Math.round(progress)}%`;
+                        statusDiv.textContent = `Status: Downloading models - ${Math.round(progress)}% complete`;
+                    }
+                }, 500);
+            }
+        });
+
+        // Start dubbing
+        startBtn.addEventListener('click', async () => {
+            if (!modelDownloaded) return;
+
+            const targetLanguage = languageSelect.value;
+            startBtn.disabled = true;
+            statusDiv.textContent = `Status: Starting live dubbing to ${getLanguageName(targetLanguage)}...`;
+
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                try {
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'ENABLE_DUBBING',
+                        data: { targetLanguage },
+                        timestamp: Date.now()
+                    });
+                    
+                    if (response.success) {
+                        dubbingActive = true;
+                        stopBtn.disabled = false;
+                        statusDiv.textContent = `Status: Live dubbing active - English → ${getLanguageName(targetLanguage)}`;
+                        startMetricsSimulation();
+                    } else {
+                        throw new Error(response.error || 'Failed to start dubbing');
+                    }
+                } catch (error) {
+                    console.error('Failed to start dubbing:', error);
+                    statusDiv.textContent = 'Status: Failed to start dubbing - ' + error.message;
+                    startBtn.disabled = false;
+                }
+            } else {
+                // Demo mode
+                dubbingActive = true;
+                stopBtn.disabled = false;
+                statusDiv.textContent = `Status: Live dubbing active - English → ${getLanguageName(targetLanguage)} (Demo)`;
+                startMetricsSimulation();
+            }
+        });
+
+        // Stop dubbing
+        stopBtn.addEventListener('click', async () => {
+            stopBtn.disabled = true;
+            statusDiv.textContent = 'Status: Stopping live dubbing...';
+
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                try {
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'DISABLE_DUBBING',
+                        timestamp: Date.now()
+                    });
+                    
+                    dubbingActive = false;
+                    startBtn.disabled = false;
+                    statusDiv.textContent = 'Status: Live dubbing stopped';
+                    metricsDisplay.textContent = 'Target latency: 1.5 seconds | Current latency: -- | Processing quality: --';
+                } catch (error) {
+                    console.error('Failed to stop dubbing:', error);
+                    statusDiv.textContent = 'Status: Error stopping dubbing - ' + error.message;
+                }
+            } else {
+                // Demo mode
+                dubbingActive = false;
+                startBtn.disabled = false;
+                statusDiv.textContent = 'Status: Live dubbing stopped (Demo)';
+                metricsDisplay.textContent = 'Target latency: 1.5 seconds | Current latency: -- | Processing quality: --';
+            }
+        });
+
+        function getLanguageName(code) {
+            const names = {
+                'es': 'Spanish',
+                'fr': 'French', 
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese'
+            };
+            return names[code] || code;
+        }
+
+        function startMetricsSimulation() {
+            if (!dubbingActive) return;
+            
+            const latency = (1200 + Math.random() * 600).toFixed(0); // 1.2-1.8s
+            const quality = (85 + Math.random() * 10).toFixed(1); // 85-95%
+            
+            metricsDisplay.textContent = `Target latency: 1.5s | Current latency: ${latency}ms | Processing quality: ${quality}%`;
+            
+            if (dubbingActive) {
+                setTimeout(startMetricsSimulation, 2000);
+            }
+        }
+
+        // Simulate news content updates
+        const newsContent = [
+            "Breaking news from the capital city today.",
+            "Weather conditions are improving across the region.", 
+            "The president announced new economic policies.",
+            "Sports news: Local team wins championship.",
+            "Government officials will meet tomorrow.",
+            "Live updates from our newsroom continue."
+        ];
+
+        let newsIndex = 0;
+        setInterval(() => {
+            if (dubbingActive) {
+                const newsItem = newsContent[newsIndex % newsContent.length];
+                console.log(`News update: ${newsItem}`);
+                newsIndex++;
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

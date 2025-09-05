@@ -1,0 +1,25 @@
+{
+  "name": "@liveworldtv/ai-models",
+  "version": "0.1.0", 
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch", 
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests for models package\""
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "onnxruntime-web": "^1.20.0",
+    "@liveworldtv/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

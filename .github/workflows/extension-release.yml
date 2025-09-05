@@ -1,0 +1,51 @@
+name: Extension Release
+
+on:
+  push:
+    tags:
+      - 'extension-v*'
+
+jobs:
+  build-extension:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Build extension
+      run: |
+        cd apps/extension
+        npm run build
+    
+    - name: Package extension
+      run: |
+        cd apps/extension/dist
+        zip -r ../liveworldtv-extension.zip .
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: LiveWorldTV Extension ${{ github.ref }}
+        draft: true
+        prerelease: false
+    
+    - name: Upload Extension Package
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: apps/extension/liveworldtv-extension.zip
+        asset_name: liveworldtv-extension.zip
+        asset_content_type: application/zip

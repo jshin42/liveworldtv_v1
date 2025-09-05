@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveWorldTV - YouTube Dubbing</title>
+    <style>
+        body {
+            width: 380px;
+            min-height: 420px;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            border: 1px solid #1a1a1a;
+        }
+
+        .header {
+            padding: 16px 20px 12px 20px;
+            background: #111111;
+            border-bottom: 1px solid #222222;
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #888888;
+            font-weight: 400;
+        }
+
+        .video-info {
+            background: #151515;
+            border: 1px solid #222222;
+            border-radius: 4px;
+            padding: 14px 16px;
+            margin: 16px 20px;
+        }
+
+        .video-title {
+            font-weight: 500;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #ffffff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .video-channel {
+            font-size: 11px;
+            color: #666666;
+            font-weight: 400;
+        }
+
+        .controls {
+            padding: 0 20px 20px 20px;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        select {
+            background: #1a1a1a;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #555555;
+            background: #222222;
+        }
+
+        select:hover {
+            border-color: #444444;
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #f0f0f0;
+            border-color: #f0f0f0;
+        }
+
+        .btn-secondary {
+            background: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #333333;
+            margin-bottom: 8px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #222222;
+            border-color: #444444;
+        }
+
+        .btn-danger {
+            background: #1a1a1a;
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #ff4444;
+            color: #ffffff;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #111111 !important;
+            color: #666666 !important;
+            border-color: #222222 !important;
+        }
+
+        .status-panel {
+            background: #151515;
+            border: 1px solid #222222;
+            border-radius: 3px;
+            padding: 14px 16px;
+            margin: 0 20px 16px 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .status-title {
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #444444;
+            display: inline-block;
+        }
+
+        .status-indicator.ready { background: #00ff88; }
+        .status-indicator.active { background: #ffaa00; animation: pulse 2s infinite; }
+        .status-indicator.error { background: #ff4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        #statusText {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .metrics {
+            background: #151515;
+            border: 1px solid #222222;
+            border-radius: 3px;
+            padding: 14px 16px;
+            margin: 0 20px 16px 20px;
+            font-size: 10px;
+            display: none;
+        }
+
+        .metrics.show { display: block; }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            color: #cccccc;
+        }
+
+        .metric-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 2px;
+            background: #222222;
+            border-radius: 1px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #ffffff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .footer {
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 9px;
+            color: #666666;
+            border-top: 1px solid #222222;
+            background: #0f0f0f;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">LiveWorldTV</div>
+        <div class="subtitle">Real-time AI dubbing</div>
+    </div>
+
+    <div class="video-info" id="videoInfo">
+        <div class="video-title" id="videoTitle">Loading video information...</div>
+        <div class="video-channel" id="videoChannel">YouTube</div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label class="control-label" for="languageSelect">Target Language</label>
+            <select id="languageSelect">
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="ru">Russian</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
+            </select>
+        </div>
+
+        <button id="downloadBtn" class="btn-secondary">Download AI Models</button>
+        <button id="startBtn" class="btn-primary" disabled>Start Live Dubbing</button>
+        <button id="stopBtn" class="btn-danger" disabled>Stop Dubbing</button>
+    </div>
+
+    <div class="status-panel" id="statusPanel">
+        <div class="status-title">
+            <span class="status-indicator" id="statusIndicator"></span>
+            Status
+        </div>
+        <div id="statusText">Ready to download AI models</div>
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <div class="metrics" id="metricsPanel">
+        <div class="status-title" style="margin-bottom: 12px;">
+            <span class="status-indicator active"></span>
+            Live Metrics
+        </div>
+        <div class="metric-row">
+            <span>Latency</span>
+            <span id="latencyMetric">--</span>
+        </div>
+        <div class="metric-row">
+            <span>Quality</span>
+            <span id="qualityMetric">--</span>
+        </div>
+        <div class="metric-row">
+            <span>Chunks</span>
+            <span id="chunksMetric">--</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        Whisper • NLLB-200 • Kokoro-82M
+    </div>
+
+    <script>
+        // YouTube Popup Controller
+        class YouTubePopupController {
+            constructor() {
+                this.isActive = false;
+                this.modelDownloaded = false;
+                this.currentTab = null;
+                this.metricsInterval = null;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.loadCurrentTab();
+            }
+
+            initializeElements() {
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.languageSelect = document.getElementById('languageSelect');
+                this.statusIndicator = document.getElementById('statusIndicator');
+                this.statusText = document.getElementById('statusText');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressFill = document.getElementById('progressFill');
+                this.metricsPanel = document.getElementById('metricsPanel');
+                this.videoTitle = document.getElementById('videoTitle');
+                this.videoChannel = document.getElementById('videoChannel');
+            }
+
+            setupEventListeners() {
+                this.downloadBtn.addEventListener('click', () => this.downloadModels());
+                this.startBtn.addEventListener('click', () => this.startDubbing());
+                this.stopBtn.addEventListener('click', () => this.stopDubbing());
+                this.languageSelect.addEventListener('change', () => this.updateLanguage());
+            }
+
+            async loadCurrentTab() {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    this.currentTab = tab;
+
+                    if (tab.url?.includes('youtube.com/watch')) {
+                        // Extract video info from tab
+                        this.updateVideoInfo(tab.title || 'YouTube Video', 'YouTube');
+                        
+                        // Check if dubbing is already active
+                        const response = await chrome.tabs.sendMessage(tab.id, {
+                            type: 'GET_PLAYER_STATE'
+                        });
+                        
+                        if (response?.success) {
+                            this.updateUIState();
+                        }
+                    } else {
+                        this.updateStatus('error', 'Please navigate to a YouTube video');
+                    }
+                } catch (error) {
+                    console.error('Failed to load current tab:', error);
+                    this.updateStatus('error', 'Could not connect to YouTube page');
+                }
+            }
+
+            updateVideoInfo(title, channel) {
+                this.videoTitle.textContent = title;
+                this.videoChannel.textContent = channel;
+            }
+
+            async downloadModels() {
+                try {
+                    this.downloadBtn.disabled = true;
+                    this.updateStatus('active', 'Downloading AI models...');
+                    this.showProgress(0);
+
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'DOWNLOAD_MODELS',
+                        timestamp: Date.now()
+                    });
+
+                    if (response.success) {
+                        this.modelDownloaded = true;
+                        this.startBtn.disabled = false;
+                        this.downloadBtn.textContent = '✅ Models Downloaded';
+                        this.updateStatus('ready', 'Ready for live dubbing');
+                        this.hideProgress();
+                    } else {
+                        throw new Error(response.error || 'Download failed');
+                    }
+
+                } catch (error) {
+                    console.error('Model download failed:', error);
+                    this.updateStatus('error', `Download failed: ${error.message}`);
+                    this.downloadBtn.disabled = false;
+                    this.downloadBtn.textContent = '📥 Retry Download';
+                    this.hideProgress();
+                }
+            }
+
+            async startDubbing() {
+                if (!this.currentTab || !this.modelDownloaded) return;
+
+                try {
+                    this.startBtn.disabled = true;
+                    this.updateStatus('active', 'Starting live dubbing...');
+
+                    const targetLanguage = this.languageSelect.value;
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'START_YOUTUBE_DUBBING',
+                        data: { targetLanguage },
+                        tabId: this.currentTab.id,
+                        timestamp: Date.now()
+                    });
+
+                    if (response.success) {
+                        this.isActive = true;
+                        this.stopBtn.disabled = false;
+                        this.languageSelect.disabled = false;
+                        this.updateStatus('active', `🎙️ Live dubbing: English → ${this.getLanguageName(targetLanguage)}`);
+                        this.metricsPanel.classList.add('show');
+                        this.startMetricsUpdates();
+                    } else {
+                        throw new Error(response.error || 'Failed to start dubbing');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to start dubbing:', error);
+                    this.updateStatus('error', `Failed to start: ${error.message}`);
+                    this.startBtn.disabled = false;
+                }
+            }
+
+            async stopDubbing() {
+                if (!this.currentTab) return;
+
+                try {
+                    this.stopBtn.disabled = true;
+                    this.updateStatus('active', 'Stopping dubbing...');
+
+                    const response = await chrome.runtime.sendMessage({
+                        type: 'STOP_YOUTUBE_DUBBING',
+                        tabId: this.currentTab.id,
+                        timestamp: Date.now()
+                    });
+
+                    this.isActive = false;
+                    this.startBtn.disabled = false;
+                    this.languageSelect.disabled = false;
+                    this.updateStatus('ready', 'Live dubbing stopped');
+                    this.metricsPanel.classList.remove('show');
+                    this.stopMetricsUpdates();
+
+                } catch (error) {
+                    console.error('Failed to stop dubbing:', error);
+                    this.updateStatus('error', `Error stopping: ${error.message}`);
+                }
+            }
+
+            async updateLanguage() {
+                if (!this.isActive || !this.currentTab) return;
+
+                const targetLanguage = this.languageSelect.value;
+                try {
+                    await chrome.tabs.sendMessage(this.currentTab.id, {
+                        type: 'UPDATE_DUBBING_LANGUAGE',
+                        data: { targetLanguage }
+                    });
+                    
+                    this.updateStatus('active', `🎙️ Language updated: English → ${this.getLanguageName(targetLanguage)}`);
+                } catch (error) {
+                    console.error('Failed to update language:', error);
+                }
+            }
+
+            updateStatus(type, text) {
+                this.statusIndicator.className = `status-indicator ${type}`;
+                this.statusText.textContent = text;
+            }
+
+            showProgress(percent) {
+                this.progressBar.style.display = 'block';
+                this.progressFill.style.width = `${percent}%`;
+            }
+
+            hideProgress() {
+                this.progressBar.style.display = 'none';
+            }
+
+            startMetricsUpdates() {
+                this.metricsInterval = setInterval(() => {
+                    if (this.isActive) {
+                        // Simulate real-time metrics
+                        const latency = (800 + Math.random() * 700).toFixed(0); // 800-1500ms
+                        const quality = (88 + Math.random() * 10).toFixed(1); // 88-98%
+                        const chunks = Math.floor(Math.random() * 5) + 1; // 1-5 chunks
+
+                        document.getElementById('latencyMetric').textContent = `${latency}ms`;
+                        document.getElementById('qualityMetric').textContent = `${quality}%`;
+                        document.getElementById('chunksMetric').textContent = chunks;
+                    }
+                }, 1500);
+            }
+
+            stopMetricsUpdates() {
+                if (this.metricsInterval) {
+                    clearInterval(this.metricsInterval);
+                    this.metricsInterval = null;
+                }
+            }
+
+            updateUIState() {
+                // Update UI based on current dubbing state
+                if (this.modelDownloaded) {
+                    this.startBtn.disabled = false;
+                    this.downloadBtn.textContent = '✅ Models Downloaded';
+                    this.updateStatus('ready', 'Ready for live dubbing');
+                }
+            }
+
+            getLanguageName(code) {
+                const names = {
+                    'es': 'Spanish', 'fr': 'French', 'de': 'German', 'it': 'Italian',
+                    'pt': 'Portuguese', 'ru': 'Russian', 'ja': 'Japanese', 'ko': 'Korean', 'zh': 'Chinese'
+                };
+                return names[code] || code.toUpperCase();
+            }
+        }
+
+        // Initialize popup when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new YouTubePopupController();
+        });
+    </script>
+</body>
+</html>

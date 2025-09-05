@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: liveworldtv
+      POSTGRES_USER: liveworldtv
+      POSTGRES_PASSWORD: liveworldtv
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./tools/migrations/sql:/docker-entrypoint-initdb.d
+    networks:
+      - liveworldtv
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - liveworldtv
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://liveworldtv:liveworldtv@postgres:5432/liveworldtv
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+    networks:
+      - liveworldtv
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NODE_ENV: development
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+    networks:
+      - liveworldtv
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  liveworldtv:

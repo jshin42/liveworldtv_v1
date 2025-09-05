@@ -1,0 +1,248 @@
+openapi: 3.0.3
+info:
+  title: LiveWorldTV Analytics API
+  version: 1.0.0
+  description: Privacy-safe event tracking and metrics
+  
+servers:
+  - url: https://api.liveworldtv.com/v1
+    description: Production
+  - url: http://localhost:3001/v1
+    description: Development
+
+paths:
+  /analytics/events:
+    post:
+      summary: Submit user interaction events
+      operationId: submitEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatch'
+      responses:
+        '204':
+          description: Events recorded successfully
+        '400':
+          description: Invalid event data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/health:
+    get:
+      summary: Get service health metrics
+      operationId: getHealthMetrics
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /sessions:
+    post:
+      summary: Create anonymous session
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreate'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+components:
+  schemas:
+    EventType:
+      type: string
+      enum: 
+        - PLAY_START
+        - DUB_ENABLED
+        - DUB_DISABLED
+        - SEEK
+        - STOP
+        - EXTENSION_INSTALLED
+        - MODEL_LOADED
+        - QUALITY_FEEDBACK
+        
+    PlayEvent:
+      type: object
+      required: [eventType, timestamp]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+        channelId:
+          type: string
+          format: uuid
+          nullable: true
+        eventType:
+          $ref: '#/components/schemas/EventType'
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          properties:
+            dubbingLatencyMs:
+              type: integer
+              minimum: 0
+              description: 'End-to-end dubbing latency'
+            audioQualityScore:
+              type: number
+              minimum: 1
+              maximum: 5
+              description: 'User-reported quality (1-5 scale)'
+            watchTimeSeconds:
+              type: integer
+              minimum: 0
+            seekPositionSeconds:
+              type: integer
+              minimum: 0
+            extensionVersion:
+              type: string
+            userAgent:
+              type: string
+            webgpuAvailable:
+              type: boolean
+            modelLoadingTimeMs:
+              type: integer
+              minimum: 0
+          additionalProperties: false
+          
+    EventBatch:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayEvent'
+          minItems: 1
+          maxItems: 50
+          description: 'Batch of events (max 50 per request)'
+          
+    SessionPreferences:
+      type: object
+      properties:
+        country:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/CountryCode'
+          nullable: true
+        topic:
+          $ref: '#/components/schemas/TopicType'
+          nullable: true
+        dubbingEnabled:
+          type: boolean
+          default: false
+        autoplayEnabled:
+          type: boolean
+          default: true
+          
+    SessionCreate:
+      type: object
+      properties:
+        preferences:
+          $ref: '#/components/schemas/SessionPreferences'
+        extensionVersion:
+          type: string
+          nullable: true
+        userAgentHash:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+          description: 'SHA256 hash of user agent (first 32 chars)'
+          
+    UserSession:
+      type: object
+      required: [sessionId, preferences, createdAt, expiresAt]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        preferences:
+          $ref: '#/components/schemas/SessionPreferences'
+        recentAutoplays:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 10
+          description: 'Recent autoplay channel IDs (last 24h)'
+        extensionVersion:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          
+    HealthMetrics:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          properties:
+            eventsPerSecond:
+              type: number
+              format: float
+            avgProcessingTimeMs:
+              type: number
+              format: float
+            errorRate:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+            databaseLatencyMs:
+              type: number
+              format: float
+            redisLatencyMs:
+              type: number
+              format: float
+          additionalProperties: false
+          
+    SessionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserSession'
+        meta:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/ApiMeta'
+          
+    HealthResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/HealthMetrics'
+        meta:
+          $ref: './openapi-catalog-service.yaml#/components/schemas/ApiMeta'
+          
+    ErrorResponse:
+      $ref: './openapi-catalog-service.yaml#/components/schemas/ErrorResponse'

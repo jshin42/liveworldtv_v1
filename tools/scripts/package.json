@@ -1,0 +1,22 @@
+{
+  "name": "@liveworldtv/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "download-models": "node dist/download-models.js",
+    "setup-dev": "node dist/setup-dev.js",
+    "health-check": "node dist/health-check.js",
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "fs-extra": "^11.2.0",
+    "@liveworldtv/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^20.12.0",
+    "@types/fs-extra": "^11.0.4"
+  }
+}

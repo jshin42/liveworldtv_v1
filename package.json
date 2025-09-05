@@ -1,0 +1,66 @@
+{
+  "name": "liveworldtv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real-time global live TV with AI-powered English dubbing",
+  "keywords": ["live-tv", "real-time", "dubbing", "ai", "translation"],
+  "author": "LiveWorldTV Team",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspaces",
+    "build:web": "npm run build --workspace=apps/web", 
+    "build:api": "npm run build --workspace=apps/api",
+    "build:extension": "npm run build --workspace=apps/extension",
+    "test": "npm run test --workspaces",
+    "test:unit": "npm run test:unit --workspaces",
+    "test:integration": "jest tests/integration --config jest.config.js",
+    "test:e2e": "npm run test --workspace=tests/e2e",
+    "test:extension": "npm run test --workspace=apps/extension",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "check": "npm run typecheck && npm run lint && npm run test:unit",
+    "models:download": "node tools/scripts/download-models.js",
+    "models:validate": "node tools/scripts/validate-models.js",
+    "models:benchmark": "node tools/scripts/benchmark-models.js",
+    "migrate": "node tools/migrations/migrate.js",
+    "db:seed": "node tools/scripts/seed-database.js",
+    "db:reset": "npm run db:migrate -- --reset && npm run db:seed",
+    "ext:build": "npm run build --workspace=apps/extension",
+    "extension:security-scan": "node tools/scripts/extension-security-scan.js",
+    "ext:package": "node tools/scripts/package-extension.js",
+    "ext:install": "node tools/scripts/install-extension.js",
+    "build:prod": "npm run build",
+    "docker:up": "docker-compose -f tools/docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f tools/docker/docker-compose.yml down",
+    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "postinstall": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "concurrently": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

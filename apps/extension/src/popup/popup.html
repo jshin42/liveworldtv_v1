@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f8f9fa;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007bff;
+    }
+    
+    .subtitle {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 4px;
+    }
+    
+    .section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .status-indicator.active {
+      background-color: #28a745;
+    }
+    
+    .status-indicator.inactive {
+      background-color: #dc3545;
+    }
+    
+    .status-indicator.loading {
+      background-color: #ffc107;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .button {
+      width: 100%;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .button-primary {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .button-primary:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    
+    .button-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .button-danger:hover:not(:disabled) {
+      background-color: #c82333;
+    }
+    
+    .language-select {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      background: white;
+    }
+    
+    .model-status {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 8px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background-color: #e9ecef;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background-color: #007bff;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">LiveWorldTV</div>
+    <div class="subtitle">Real-time AI dubbing</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Current Page</div>
+    <div class="status">
+      <span id="page-status">
+        <span class="status-indicator inactive"></span>
+        Checking page...
+      </span>
+    </div>
+    <div id="channel-info" style="font-size: 12px; color: #6c757d; display: none;">
+      Channel: <span id="channel-name"></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Dubbing Control</div>
+    
+    <select id="language-select" class="language-select">
+      <option value="en">English</option>
+      <option value="es">Spanish</option>
+      <option value="fr">French</option>
+      <option value="de">German</option>
+      <option value="it">Italian</option>
+      <option value="pt">Portuguese</option>
+      <option value="ru">Russian</option>
+      <option value="ja">Japanese</option>
+      <option value="ko">Korean</option>
+      <option value="zh">Chinese</option>
+    </select>
+    
+    <button id="dubbing-toggle" class="button button-primary" disabled>
+      Checking models...
+    </button>
+    
+    <div id="dubbing-status" class="status" style="margin-top: 8px; display: none;">
+      <span>
+        <span class="status-indicator active"></span>
+        Active dubbing session
+      </span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">AI Models</div>
+    <div class="model-status">
+      <div id="model-whisper">
+        <span class="status-indicator loading"></span>
+        Whisper (ASR): Loading...
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div id="model-nllb" style="margin-top: 6px;">
+        <span class="status-indicator loading"></span>
+        NLLB (Translation): Loading...
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div id="model-kokoro" style="margin-top: 6px;">
+        <span class="status-indicator loading"></span>
+        Kokoro (TTS): Loading...
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
