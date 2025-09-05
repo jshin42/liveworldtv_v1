@@ -1,23 +1,20 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext", 
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "lib": ["ES2022"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
       "@liveworldtv/shared-types": ["./packages/shared-types/src"],
       "@liveworldtv/ai-models": ["./packages/ai-models/src"],
       "@liveworldtv/telemetry": ["./packages/telemetry/src"]
@@ -29,17 +26,14 @@
     "noImplicitOverride": true
   },
   "include": [
-    "next-env.d.ts",
-    "apps/**/*.ts",
-    "apps/**/*.tsx", 
     "packages/**/*.ts",
-    "tools/**/*.ts",
-    "tests/**/*.ts"
+    "tools/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "**/node_modules",
     "**/dist",
-    "**/.next"
+    "**/.next",
+    "**/build"
   ]
 }
