@@ -52,3 +52,6 @@ export class PlayEvent {
   @Column('integer', { nullable: true })
   processingTimeMs?: number;
 }
+
+// Export alias for backward compatibility
+export { PlayEvent as AnalyticsEvent };

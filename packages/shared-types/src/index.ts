@@ -158,3 +158,100 @@ export interface HealthCheck {
   metrics: Record<string, any>
   lastCheck: Date
 }
+
+// Analytics API Types
+export interface AnalyticsEventRequest {
+  sessionId?: string
+  channelId?: string
+  eventType: EventType
+  metadata?: Record<string, any>
+}
+
+export interface AnalyticsEventResponse {
+  id: string
+  eventType: EventType
+  eventTimestamp: Date
+  processingTimeMs?: number
+}
+
+export interface AnalyticsMetrics {
+  totalEvents: number
+  eventsByType: Record<EventType, number>
+  avgProcessingTime: number
+  sessionsToday: number
+  popularChannels: Array<{
+    channelId: string
+    eventCount: number
+  }>
+  lastUpdated: Date
+}
+
+// Ranking API Types
+export interface RankingResponse {
+  rankings: RankedChannel[]
+  autoplay: {
+    channel: RankedChannel
+    reason: 'TRENDING' | 'POPULAR' | 'RANDOM' | 'PERSONALIZED'
+  }
+  lastUpdated: Date
+  country?: CountryCode
+  topic?: TopicType
+}
+
+// Health API Types  
+export interface HealthResponse {
+  status: 'healthy' | 'degraded' | 'unhealthy'
+  components: HealthCheck[]
+  uptime: number
+  version: string
+  timestamp: Date
+}
+
+// Ingestion API Types
+export interface IngestionStatus {
+  queueStats: {
+    waiting: number
+    active: number
+    completed: number
+    failed: number
+  }
+  recentJobs: Array<{
+    id: string
+    name: string
+    data: any
+    progress: any
+    processedOn?: Date
+    finishedOn?: Date
+    failedReason?: string
+  }>
+  lastSuccessfulRun?: Date
+}
+
+export interface ScrapedChannel {
+  name: string
+  url: string
+  country: CountryCode
+  language: string
+  topic: TopicType
+  isLive: boolean
+  viewerCount: number
+  thumbnailUrl?: string
+  description?: string
+}
+
+// Channel List Response (already has ChannelListResponse type alias)
+export interface ChannelListRequest {
+  country: CountryCode
+  topic?: TopicType
+  page?: number
+  limit?: number
+  search?: string
+}
+
+// Stream API Types
+export interface StreamResponse {
+  stream: LiveStream
+  channel: Channel
+  dubbingAvailable: boolean
+  qualityOptions: string[]
+}

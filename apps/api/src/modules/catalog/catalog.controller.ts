@@ -2,8 +2,8 @@ import { Controller, Get, Post, Query, Param, Body, ParseUUIDPipe, Version } fro
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiParam } from '@nestjs/swagger'
 import { CatalogService } from './catalog.service'
 import { ChannelListDto, ChannelFilterDto } from './dto/channel-list.dto'
-import { ApiResponse as ApiResponseInterface, CountryCode } from '../../../../../packages/shared-types/src'
-import { Channel, TopicType } from '../../entities/channel.entity'
+import { ApiResponse as ApiResponseInterface, CountryCode, TopicType } from '@liveworldtv/shared-types'
+import { Channel } from './entities/channel.entity'
 import { LiveStream } from './entities/live-stream.entity'
 
 @ApiTags('catalog')
