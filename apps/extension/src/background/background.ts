@@ -1,5 +1,5 @@
-import { ModelManager } from './model-manager'
-import { TabManager } from './tab-manager'
+import { ModelManager } from './model-manager-real'
+import { AIPipeline } from './ai-pipeline'
 
 interface ExtensionMessage {
   type: 'ENABLE_DUBBING' | 'DISABLE_DUBBING' | 'GET_MODEL_STATUS' | 'DOWNLOAD_MODELS' | 'get-model' | 'YOUTUBE_VIDEO_DETECTED' | 'PROCESS_AUDIO_CHUNK' | 'START_YOUTUBE_DUBBING' | 'STOP_YOUTUBE_DUBBING'
@@ -13,20 +13,38 @@ interface ExtensionResponse {
   success: boolean
   data?: any
   error?: string
+  modelReady?: boolean
+  session?: boolean
 }
 
 class ExtensionServiceWorker {
   private modelManager: ModelManager
-  private tabManager: TabManager
+  private aiPipelines = new Map<number, AIPipeline>()
   private activeSessions = new Set<number>()
   private youtubeProcessingQueues = new Map<number, any[]>()
 
   constructor() {
     this.modelManager = new ModelManager()
-    this.tabManager = new TabManager(this.modelManager)
     
     this.setupMessageHandlers()
     this.setupInstallHandler()
+    this.initializeExtension()
+  }
+
+  private async initializeExtension(): Promise<void> {
+    try {
+      console.log('🚀 LiveWorldTV Extension initializing...');
+      
+      // Check if models exist, pre-load for faster startup
+      await this.modelManager.checkModelFiles();
+      console.log('🤖 Pre-loading AI models...');
+      await this.modelManager.loadAllModels();
+      
+      console.log('✅ LiveWorldTV Extension ready for real-time dubbing!');
+    } catch (error) {
+      console.error('❌ Extension initialization failed:', error);
+      console.log('⚠️ Running in demo mode');
+    }
   }
 
   private setupMessageHandlers(): void {
@@ -56,33 +74,27 @@ class ExtensionServiceWorker {
           break
 
         case 'GET_MODEL_STATUS':
-          const status = await this.modelManager.getStatus()
+          const status = this.modelManager.getAllModelStatus()
           sendResponse({ success: true, data: status })
           break
 
         case 'DOWNLOAD_MODELS':
-          await this.modelManager.downloadAllModels()
+          await this.modelManager.loadAllModels()
           sendResponse({ success: true })
           break
 
         case 'get-model':
           if (message.modelName) {
-            const modelData = await this.modelManager.getModel(message.modelName);
-            if (modelData) {
-              sendResponse({ success: true, modelData });
+            const modelReady = await this.modelManager.isModelReady(message.modelName);
+            if (modelReady) {
+              const session = await this.modelManager.getModel(message.modelName);
+              sendResponse({ success: true, modelReady: true, session: !!session });
             } else {
-              // Start download if not available
-              console.log(`🔄 Model ${message.modelName} not cached, starting download...`);
-              await this.modelManager.downloadModel({
-                name: message.modelName as any,
-                filename: `${message.modelName}.onnx`,
-                url: this.getModelUrl(message.modelName),
-                size: this.getModelSize(message.modelName),
-                sha256: 'placeholder_hash',
-                version: '1.0.0'
-              });
-              const modelData = await this.modelManager.getModel(message.modelName);
-              sendResponse({ success: !!modelData, modelData });
+              // Try to load the model
+              console.log(`🔄 Model ${message.modelName} not ready, loading...`);
+              await this.modelManager.loadModel(message.modelName);
+              const session = await this.modelManager.getModel(message.modelName);
+              sendResponse({ success: !!session, modelReady: !!session });
             }
           } else {
             sendResponse({ success: false, error: 'Model name required' });
@@ -127,44 +139,56 @@ class ExtensionServiceWorker {
       throw new Error('Dubbing already enabled for this tab')
     }
 
-    // 1. Ensure models are ready
-    const modelsReady = await this.modelManager.ensureModelsReady()
-    if (!modelsReady) {
-      throw new Error('AI models not available')
-    }
-
-    // 2. Request tab capture permission
-    const stream = await chrome.tabCapture.capture({
-      audio: true,
-      video: false
-    })
-
-    if (!stream) {
-      throw new Error('Failed to capture tab audio')
-    }
-
-    // 3. Start dubbing session
-    const started = await this.tabManager.startDubbing(tabId, 'en')
-
-    // 4. Track active session
-    this.activeSessions.add(tabId)
-
-    // 5. Notify content script
     try {
+      // 1. Create AI pipeline for this tab
+      const pipeline = new AIPipeline(this.modelManager);
+      await pipeline.initialize();
+
+      // 2. Request tab capture permission
+      const stream = await new Promise<MediaStream>((resolve, reject) => {
+        chrome.tabCapture.capture({
+          audio: true,
+          video: false
+        }, (stream) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (stream) {
+            resolve(stream);
+          } else {
+            reject(new Error('No stream returned from tabCapture'));
+          }
+        });
+      });
+
+      // 3. Start AI processing pipeline
+      const dubbedStream = await pipeline.startProcessing(stream, 'auto', 'en');
+
+      // 4. Store pipeline and mark session active
+      this.aiPipelines.set(tabId, pipeline);
+      this.activeSessions.add(tabId);
+
+      // 5. Notify content script
       await chrome.tabs.sendMessage(tabId, {
         type: 'DUBBING_ENABLED',
         data: { 
-          stream: stream,
-          modelStatus: await this.modelManager.getStatus()
+          originalStream: stream,
+          dubbedStream: dubbedStream,
+          modelStatus: this.modelManager.getAllModelStatus()
         }
-      })
-    } catch (error) {
-      // Clean up if content script notification fails
-      this.activeSessions.delete(tabId)
-      throw error
-    }
+      });
 
-    console.log(`✅ Dubbing enabled for tab ${tabId}`)
+      console.log(`✅ Real-time AI dubbing enabled for tab ${tabId}`);
+
+    } catch (error) {
+      // Clean up on failure
+      const pipeline = this.aiPipelines.get(tabId);
+      if (pipeline) {
+        await pipeline.cleanup();
+        this.aiPipelines.delete(tabId);
+      }
+      this.activeSessions.delete(tabId);
+      throw error;
+    }
   }
 
   private async disableDubbing(tabId: number): Promise<void> {
@@ -172,24 +196,28 @@ class ExtensionServiceWorker {
       return // Already disabled
     }
 
-    // 1. Stop dubbing session
-    await this.tabManager.stopDubbing(tabId)
-
-    // 2. Remove from active sessions
-    this.activeSessions.delete(tabId)
-
-    // 3. Notify content script
     try {
+      // 1. Stop AI pipeline
+      const pipeline = this.aiPipelines.get(tabId);
+      if (pipeline) {
+        await pipeline.cleanup();
+        this.aiPipelines.delete(tabId);
+      }
+
+      // 2. Remove from active sessions
+      this.activeSessions.delete(tabId);
+
+      // 3. Notify content script
       await chrome.tabs.sendMessage(tabId, {
         type: 'DUBBING_DISABLED',
         data: {}
-      })
-    } catch (error) {
-      // Content script may not be available, that's OK
-      console.warn(`Could not notify content script for tab ${tabId}:`, error)
-    }
+      });
 
-    console.log(`🔇 Dubbing disabled for tab ${tabId}`)
+      console.log(`🔇 AI dubbing disabled for tab ${tabId}`);
+
+    } catch (error) {
+      console.warn(`Error disabling dubbing for tab ${tabId}:`, error);
+    }
   }
 
   private setupInstallHandler(): void {
@@ -197,9 +225,9 @@ class ExtensionServiceWorker {
       if (details.reason === 'install') {
         console.log('🎉 LiveWorldTV extension installed')
         
-        // Start downloading models in background
-        this.modelManager.downloadAllModels().catch(error => {
-          console.error('Background model download failed:', error)
+        // Start loading models in background
+        this.modelManager.loadAllModels().catch(error => {
+          console.error('Background model loading failed:', error)
         })
         
         // Record installation event
@@ -243,19 +271,15 @@ class ExtensionServiceWorker {
 
   private async startYouTubeDubbing(tabId: number, targetLanguage: string): Promise<boolean> {
     try {
-      console.log(`🎥 Starting YouTube dubbing for tab ${tabId}: English → ${targetLanguage}`);
+      console.log(`🎥 Starting YouTube dubbing for tab ${tabId}: auto → ${targetLanguage}`);
       
-      // Ensure models are ready
-      const modelsReady = await this.modelManager.ensureModelsReady();
-      if (!modelsReady) {
-        console.error('❌ AI models not ready');
-        return false;
-      }
+      // Create and initialize AI pipeline for this tab
+      const pipeline = new AIPipeline(this.modelManager);
+      await pipeline.initialize();
 
-      // Initialize processing queue for this tab
+      // Store pipeline for this tab
+      this.aiPipelines.set(tabId, pipeline);
       this.youtubeProcessingQueues.set(tabId, []);
-      
-      // Mark session as active
       this.activeSessions.add(tabId);
 
       // Send message to YouTube content script to start dubbing
@@ -264,11 +288,21 @@ class ExtensionServiceWorker {
         data: { targetLanguage }
       });
 
-      console.log(`✅ YouTube dubbing started for tab ${tabId}`);
+      console.log(`✅ YouTube AI dubbing started for tab ${tabId}`);
       return true;
 
     } catch (error) {
       console.error('❌ Failed to start YouTube dubbing:', error);
+      
+      // Clean up on failure
+      const pipeline = this.aiPipelines.get(tabId);
+      if (pipeline) {
+        await pipeline.cleanup();
+        this.aiPipelines.delete(tabId);
+      }
+      this.activeSessions.delete(tabId);
+      this.youtubeProcessingQueues.delete(tabId);
+      
       return false;
     }
   }
@@ -277,10 +311,15 @@ class ExtensionServiceWorker {
     try {
       console.log(`🔇 Stopping YouTube dubbing for tab ${tabId}`);
 
-      // Remove from active sessions
+      // Stop AI pipeline
+      const pipeline = this.aiPipelines.get(tabId);
+      if (pipeline) {
+        await pipeline.cleanup();
+        this.aiPipelines.delete(tabId);
+      }
+
+      // Remove from active sessions and clear queue
       this.activeSessions.delete(tabId);
-      
-      // Clear processing queue
       this.youtubeProcessingQueues.delete(tabId);
 
       // Send message to YouTube content script to stop dubbing
@@ -288,7 +327,7 @@ class ExtensionServiceWorker {
         type: 'STOP_YOUTUBE_DUBBING'
       });
 
-      console.log(`✅ YouTube dubbing stopped for tab ${tabId}`);
+      console.log(`✅ YouTube AI dubbing stopped for tab ${tabId}`);
 
     } catch (error) {
       console.error('❌ Failed to stop YouTube dubbing:', error);
@@ -300,62 +339,79 @@ class ExtensionServiceWorker {
       return; // Session not active
     }
 
+    const pipeline = this.aiPipelines.get(tabId);
+    if (!pipeline) {
+      console.warn('No AI pipeline found for tab', tabId);
+      return;
+    }
+
     try {
       const { id, audioData, sampleRate, targetLanguage, timestamp } = message.data;
       
-      console.log(`🎵 Processing YouTube audio chunk: ${id}`);
+      console.log(`🎵 Processing YouTube audio chunk: ${id} with real AI pipeline`);
 
       // Convert audio data back to Float32Array
       const audioFloat32 = new Float32Array(audioData);
 
-      // Process through AI pipeline:
-      // 1. ASR: Convert speech to text
-      const transcription = await this.processASR(audioFloat32, sampleRate);
+      // Create audio chunk for AI pipeline
+      const audioChunk = {
+        data: audioFloat32,
+        timestamp: timestamp || Date.now(),
+        sampleRate: sampleRate || 16000
+      };
+
+      // Process through real AI pipeline methods
+      const transcription = await pipeline['transcribeAudio'](audioChunk);
       
-      if (!transcription || transcription.confidence < 0.4) {
-        console.log(`⏭️ Skipping low-confidence transcription: ${transcription?.text}`);
+      if (!transcription || transcription.text.trim().length === 0) {
+        console.log(`⏭️ Skipping empty transcription`);
         return;
       }
 
-      console.log(`📝 Transcribed: "${transcription.text}" (confidence: ${transcription.confidence})`);
+      console.log(`📝 AI Transcribed: "${transcription.text}" (confidence: ${transcription.confidence})`);
 
-      // 2. MT: Translate to target language  
-      const translation = await this.processMT(transcription.text, 'en', targetLanguage);
-      
-      if (!translation || translation.confidence < 0.3) {
-        console.log(`⏭️ Skipping low-confidence translation`);
-        return;
-      }
+      // Translate using real AI pipeline
+      const translation = await pipeline['translateText'](
+        transcription.text,
+        transcription.language,
+        targetLanguage
+      );
 
-      console.log(`🌐 Translated: "${translation.translatedText}" (${targetLanguage})`);
+      console.log(`🌐 AI Translated: "${translation.text}" (${targetLanguage})`);
 
-      // 3. TTS: Generate speech in target language
-      const synthesis = await this.processTTS(translation.translatedText, targetLanguage);
-      
-      if (!synthesis || !synthesis.audioData || synthesis.audioData.length === 0) {
+      // Generate speech using real AI pipeline
+      const synthesis = await pipeline['synthesizeSpeech'](
+        translation.text,
+        targetLanguage
+      );
+
+      if (!synthesis || !synthesis.audioBuffer || synthesis.audioBuffer.byteLength === 0) {
         console.log(`⏭️ Skipping empty TTS synthesis`);
         return;
       }
 
-      console.log(`🎙️ Synthesized audio: ${synthesis.audioData.length} samples at ${synthesis.sampleRate}Hz`);
+      console.log(`🎙️ AI Synthesized audio: ${synthesis.audioBuffer.byteLength} bytes, duration: ${synthesis.duration}s`);
 
-      // 4. Send dubbed audio back to YouTube content script
+      // Convert ArrayBuffer to Array for message passing
+      const audioArray = Array.from(new Int16Array(synthesis.audioBuffer));
+
+      // Send dubbed audio back to YouTube content script
       await chrome.tabs.sendMessage(tabId, {
         type: 'DUBBED_AUDIO_READY',
         data: {
           chunkId: id,
-          audioData: Array.from(synthesis.audioData),
-          sampleRate: synthesis.sampleRate,
+          audioData: audioArray,
+          sampleRate: 16000, // Standard rate for synthesis
           originalText: transcription.text,
-          translatedText: translation.translatedText,
-          processingLatency: Date.now() - timestamp
+          translatedText: translation.text,
+          processingLatency: Date.now() - (timestamp || Date.now())
         }
       });
 
-      console.log(`✅ Dubbed audio sent to tab ${tabId} for chunk ${id}`);
+      console.log(`✅ AI-dubbed audio sent to tab ${tabId} for chunk ${id}`);
 
     } catch (error) {
-      console.error('❌ YouTube audio processing error:', error);
+      console.error('❌ Real AI pipeline processing error:', error);
     }
   }
 

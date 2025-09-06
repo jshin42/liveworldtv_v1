@@ -47,7 +47,9 @@
       "resources": [
         "models/*.onnx",
         "workers/*.js",
-        "offscreen.html"
+        "offscreen.html",
+        "onnxruntime-web/*.wasm",
+        "onnxruntime-web/*.js"
       ],
       "matches": [
         "*://*.youtube.com/*",
