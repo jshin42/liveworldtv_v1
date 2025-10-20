@@ -75,4 +75,4 @@ apps/extension/*.zip
 
 # Temporary folders
 tmp/
-temp/
+temp/*.disabled/
