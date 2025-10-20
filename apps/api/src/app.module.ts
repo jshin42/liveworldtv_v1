@@ -1,30 +1,35 @@
-import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import { CatalogModule } from './modules/catalog/catalog.module'
-import { HealthModule } from './modules/health/health.module'
+import { Module, Controller, Get } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
+@Controller()
+class AppController {
+  @Get()
+  getHello() {
+    return {
+      message: 'LiveWorldTV API',
+      version: '0.1.0',
+      status: 'running',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('health')
+  getHealth() {
+    return {
+      status: 'healthy',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env'
+      envFilePath: '.env',
     }),
-    
-    // Temporarily disabled until entities compile properly:
-    // TypeOrmModule.forRootAsync({
-    //   useFactory: databaseConfig
-    // }),
-    // 
-    // BullModule.forRootAsync({
-    //   useFactory: redisConfig
-    // }),
-    
-    CatalogModule,
-    HealthModule,
-    // Disabled until TypeScript errors resolved:
-    // RankingModule,
-    // AnalyticsModule,
-    // IngestionModule
-  ]
+  ],
+  controllers: [AppController],
 })
 export class AppModule {}

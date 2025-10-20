@@ -1,56 +1,47 @@
-import 'reflect-metadata'
-import { NestFactory } from '@nestjs/core'
-import { ValidationPipe, VersioningType } from '@nestjs/common'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import { AppModule } from './app.module'
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
-  
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-    transformOptions: {
-      enableImplicitConversion: true
-    }
-  }))
-  
-  // API versioning
-  app.enableVersioning({
-    type: VersioningType.URI,
-    prefix: 'v'
-  })
-  
-  // CORS configuration
+  const app = await NestFactory.create(AppModule);
+
+  // Enable CORS for local development
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://liveworldtv.com', 'https://www.liveworldtv.com']
-      : true,
-    credentials: true
-  })
-  
-  // OpenAPI documentation
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('LiveWorldTV API')
-      .setDescription('Real-time AI dubbing platform API')
-      .setVersion('1.0')
-      .addTag('catalog', 'Channel catalog and discovery')
-      .addTag('ranking', 'Content ranking and recommendations')
-      .addTag('analytics', 'User analytics and events')
-      .build()
-    
-    const document = SwaggerModule.createDocument(app, config)
-    SwaggerModule.setup('docs', app, document)
-  }
-  
-  const port = process.env.PORT || 3001
-  await app.listen(port)
-  
-  console.log(`🚀 LiveWorldTV API running on port ${port}`)
-  console.log(`📚 API docs available at http://localhost:${port}/docs`)
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Swagger API documentation
+  const config = new DocumentBuilder()
+    .setTitle('LiveWorldTV API')
+    .setDescription('Real-time global live TV with AI-powered English dubbing')
+    .setVersion('0.1.0')
+    .addTag('catalog', 'Channel catalog management')
+    .addTag('ranking', 'Content ranking and recommendations')
+    .addTag('analytics', 'User analytics and telemetry')
+    .addTag('health', 'System health and status')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+
+  console.log(`
+🚀 LiveWorldTV API is running on: http://localhost:${port}
+📚 API Documentation: http://localhost:${port}/api/docs
+  `);
 }
 
-bootstrap()
+bootstrap();
