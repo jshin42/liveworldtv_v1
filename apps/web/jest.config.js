@@ -1,7 +1,7 @@
 module.exports = {
   displayName: 'web',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testMatch: ['<rootDir>/src/**/*.{test,spec}.{ts,tsx}'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

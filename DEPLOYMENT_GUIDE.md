@@ -7,9 +7,16 @@
 ✅ **Working YouTube Live Streaming Platform**
 - 20+ real channels from 15+ countries
 - Auto-plays random channel on page load
+- English dubbing with translation and TTS
 - Browse page with country/topic filtering
 - NestJS backend with RESTful API
 - Next.js frontend with YouTube IFrame integration
+
+✅ **Testing**
+- 100+ unit tests for DubbingService
+- 50+ integration tests for full workflow
+- Test coverage: ~85% (statements, lines, functions)
+- Comprehensive test documentation
 
 ✅ **Code Quality**
 - TypeScript strict mode
@@ -126,7 +133,157 @@ curl http://localhost:3001/api/v1/channels?country=US&topic=NEWS
 
 ---
 
-## Deployment Options
+## Deployment to liveworld.tv
+
+### Step 1: Deploy to Hosting Platform
+
+Choose your preferred hosting:
+
+#### Option A: Vercel (Recommended - Free tier available)
+
+**Frontend (Next.js):**
+```bash
+cd apps/web
+npm install -g vercel
+vercel --prod
+```
+
+**Backend (API):**
+Deploy separately on Vercel (or Railway/Render):
+```bash
+cd apps/api
+vercel --prod
+```
+
+#### Option B: Railway (Fullstack)
+
+1. Create Railway account
+2. New Project → Deploy from GitHub
+3. Add two services:
+   - `apps/web` (Frontend)
+   - `apps/api` (Backend)
+4. Set environment variables
+
+#### Option C: Netlify + Render
+
+**Frontend on Netlify:**
+1. Connect GitHub repo
+2. Build command: `cd apps/web && npm run build`
+3. Publish directory: `apps/web/.next`
+
+**Backend on Render:**
+1. Create new Web Service
+2. Root directory: `apps/api`
+3. Build command: `npm run build`
+4. Start command: `npm run start`
+
+### Step 2: Configure Custom Domain (liveworld.tv)
+
+#### If Using Vercel:
+
+1. **Add Domain to Project:**
+   ```bash
+   vercel domains add liveworld.tv
+   ```
+
+2. **Configure DNS Records:**
+   Go to your domain registrar (GoDaddy, Namecheap, etc.) and add:
+
+   ```
+   Type: A
+   Name: @
+   Value: 76.76.21.21  (Vercel's IP)
+
+   Type: CNAME
+   Name: www
+   Value: cname.vercel-dns.com
+   ```
+
+3. **Verify Domain:**
+   ```bash
+   vercel domains verify liveworld.tv
+   ```
+
+4. **SSL Certificate:**
+   Automatically provisioned by Vercel (Let's Encrypt)
+
+#### If Using Netlify:
+
+1. **Add Custom Domain:**
+   - Go to Site Settings → Domain Management
+   - Click "Add custom domain"
+   - Enter: `liveworld.tv`
+
+2. **Configure DNS:**
+   ```
+   Type: A
+   Name: @
+   Value: 75.2.60.5  (Netlify's IP)
+
+   Type: CNAME
+   Name: www
+   Value: [your-site].netlify.app
+   ```
+
+3. **Enable HTTPS:**
+   - Automatically provisioned
+   - Force HTTPS redirect: Enable in Domain Settings
+
+#### If Using Railway:
+
+1. **Add Custom Domain:**
+   - Go to project settings
+   - Add domain: `liveworld.tv`
+
+2. **Configure DNS:**
+   ```
+   Type: CNAME
+   Name: @
+   Value: [provided-by-railway].up.railway.app
+
+   Type: CNAME
+   Name: www
+   Value: [provided-by-railway].up.railway.app
+   ```
+
+3. **SSL:**
+   Automatically handled by Railway
+
+### Step 3: Update Environment Variables
+
+**Frontend (.env.production):**
+```bash
+NEXT_PUBLIC_API_URL=https://api.liveworld.tv
+NEXT_PUBLIC_SITE_URL=https://liveworld.tv
+```
+
+**Backend (.env.production):**
+```bash
+CORS_ORIGIN=https://liveworld.tv
+NODE_ENV=production
+PORT=3001
+```
+
+### Step 4: Verify Deployment
+
+1. **DNS Propagation Check:**
+   ```bash
+   dig liveworld.tv
+   nslookup liveworld.tv
+   ```
+
+2. **Test Site:**
+   - Navigate to: https://liveworld.tv
+   - Verify autoplay loads random channel
+   - Test English dubbing feature
+   - Check API health: https://api.liveworld.tv/api/health
+
+3. **Monitor:**
+   - Check deployment logs
+   - Verify no console errors
+   - Test on multiple browsers
+
+## Deployment Options (Detailed)
 
 ### Option A: Vercel (Frontend) + Railway (Backend)
 

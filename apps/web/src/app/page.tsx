@@ -44,7 +44,7 @@ export default function HomePage() {
 
   // Dubbing state
   const [dubbingEnabled, setDubbingEnabled] = useState(false);
-  const [targetLanguage, setTargetLanguage] = useState('english');
+  const targetLanguage = 'english'; // Fixed to English only
   const [dubbingStatus, setDubbingStatus] = useState<DubbingStatus>({
     state: 'idle',
     message: 'Not started',
@@ -173,19 +173,6 @@ export default function HomePage() {
     }
   }
 
-  function handleLanguageChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newLanguage = e.target.value;
-    setTargetLanguage(newLanguage);
-
-    if (dubbingServiceRef.current && dubbingEnabled) {
-      dubbingServiceRef.current.updateConfig({ targetLanguage: newLanguage });
-      setDubbingStatus({
-        ...dubbingStatus,
-        message: `Dubbing to ${newLanguage}`
-      });
-    }
-  }
-
   // Test dubbing with sample text (for demonstration)
   async function testDubbing() {
     if (!dubbingServiceRef.current) return;
@@ -255,7 +242,7 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-purple-900 to-blue-900 p-6 rounded-lg mb-6 border-2 border-purple-500">
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-2xl font-bold">
-              🎙️ REAL-TIME Live Dubbing
+              🎙️ English Dubbing
             </h3>
             <span className="px-3 py-1 bg-green-600 text-xs font-bold rounded animate-pulse">
               BETA
@@ -263,7 +250,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-sm text-gray-300 mb-4">
-            Instant speech recognition → translation → voice synthesis. <strong>Zero latency buffering.</strong>
+            Watch international news with live English translation and voice synthesis.
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
@@ -275,30 +262,12 @@ export default function HomePage() {
                   : 'bg-green-600 hover:bg-green-700 shadow-green-500/50 shadow-lg'
               }`}
             >
-              {dubbingEnabled ? '⏹ Stop Dubbing' : '▶️ Start Real-Time Dubbing'}
+              {dubbingEnabled ? '⏹ Stop English Dubbing' : '▶️ Start English Dubbing'}
             </button>
 
-            <div>
-              <label className="text-sm text-gray-300 block mb-2 font-semibold">
-                Translate to:
-              </label>
-              <select
-                value={targetLanguage}
-                onChange={handleLanguageChange}
-                className="bg-gray-800 text-white px-4 py-3 rounded-lg border-2 border-gray-600 hover:border-purple-500 transition"
-              >
-                <option value="english">🇺🇸 English</option>
-                <option value="spanish">🇪🇸 Spanish</option>
-                <option value="french">🇫🇷 French</option>
-                <option value="german">🇩🇪 German</option>
-                <option value="japanese">🇯🇵 Japanese</option>
-                <option value="korean">🇰🇷 Korean</option>
-                <option value="chinese">🇨🇳 Chinese</option>
-                <option value="portuguese">🇧🇷 Portuguese</option>
-                <option value="russian">🇷🇺 Russian</option>
-                <option value="arabic">🇸🇦 Arabic</option>
-                <option value="hindi">🇮🇳 Hindi</option>
-              </select>
+            <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-lg border-2 border-gray-600">
+              <span className="text-2xl">🇺🇸</span>
+              <span className="font-semibold">English</span>
             </div>
 
             {dubbingEnabled && (
