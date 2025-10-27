@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { DubbingService, DubbingConfig } from '../lib/dubbing/DubbingService';
+import { DubbingService, DubbingConfig, DubbingStatus } from '../lib/dubbing/DubbingService';
 
 interface Channel {
   id: string;
@@ -45,7 +45,11 @@ export default function HomePage() {
   // Dubbing state
   const [dubbingEnabled, setDubbingEnabled] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState('english');
-  const [dubbingStatus, setDubbingStatus] = useState('');
+  const [dubbingStatus, setDubbingStatus] = useState<DubbingStatus>({
+    state: 'idle',
+    message: 'Not started',
+    captionsAvailable: false
+  });
   const dubbingServiceRef = useRef<DubbingService | null>(null);
 
   useEffect(() => {
@@ -118,7 +122,11 @@ export default function HomePage() {
     if (!channel) return;
 
     if (!dubbingEnabled) {
-      setDubbingStatus('Initializing dubbing...');
+      setDubbingStatus({
+        state: 'initializing',
+        message: 'Initializing dubbing service...',
+        captionsAvailable: false
+      });
 
       const config: DubbingConfig = {
         sourceLanguage: channel.languageCode || 'english',
@@ -130,15 +138,25 @@ export default function HomePage() {
 
       try {
         const service = new DubbingService(config);
+
+        // Set status callback for real-time updates
+        service.setStatusCallback((status) => {
+          setDubbingStatus(status);
+        });
+
         await service.initialize();
         service.start();
 
         dubbingServiceRef.current = service;
         setDubbingEnabled(true);
-        setDubbingStatus('Dubbing active! Speaking in ' + targetLanguage);
       } catch (error) {
         console.error('Failed to start dubbing:', error);
-        setDubbingStatus('Error: ' + (error as Error).message);
+        setDubbingStatus({
+          state: 'error',
+          message: (error as Error).message,
+          captionsAvailable: false
+        });
+        setDubbingEnabled(false);
       }
     } else {
       if (dubbingServiceRef.current) {
@@ -147,7 +165,11 @@ export default function HomePage() {
         dubbingServiceRef.current = null;
       }
       setDubbingEnabled(false);
-      setDubbingStatus('');
+      setDubbingStatus({
+        state: 'idle',
+        message: 'Dubbing stopped',
+        captionsAvailable: false
+      });
     }
   }
 
@@ -157,8 +179,25 @@ export default function HomePage() {
 
     if (dubbingServiceRef.current && dubbingEnabled) {
       dubbingServiceRef.current.updateConfig({ targetLanguage: newLanguage });
-      setDubbingStatus('Dubbing to ' + newLanguage);
+      setDubbingStatus({
+        ...dubbingStatus,
+        message: `Dubbing to ${newLanguage}`
+      });
     }
+  }
+
+  // Test dubbing with sample text (for demonstration)
+  async function testDubbing() {
+    if (!dubbingServiceRef.current) return;
+
+    const sampleTexts = [
+      "Hello and welcome to our live news broadcast",
+      "Breaking news from around the world",
+      "Thank you for watching"
+    ];
+
+    const randomText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+    await dubbingServiceRef.current.processCaptionText(randomText);
   }
 
   if (loading) {
@@ -262,26 +301,63 @@ export default function HomePage() {
               </select>
             </div>
 
-            {dubbingStatus && (
-              <div className="flex-1 bg-gray-800 px-4 py-3 rounded-lg">
-                <p className={`text-sm font-semibold ${dubbingEnabled ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {dubbingStatus}
+            {dubbingEnabled && (
+              <button
+                onClick={testDubbing}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-all"
+              >
+                🧪 Test Dubbing
+              </button>
+            )}
+
+            <div className="flex-1 bg-gray-800 px-4 py-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  dubbingStatus.state === 'active' ? 'bg-green-500 animate-pulse' :
+                  dubbingStatus.state === 'initializing' ? 'bg-yellow-500 animate-pulse' :
+                  dubbingStatus.state === 'error' ? 'bg-red-500' :
+                  dubbingStatus.state === 'unsupported' ? 'bg-orange-500' :
+                  'bg-gray-500'
+                }`}></div>
+                <p className={`text-sm font-semibold ${
+                  dubbingStatus.state === 'active' ? 'text-green-400' :
+                  dubbingStatus.state === 'initializing' ? 'text-yellow-400' :
+                  dubbingStatus.state === 'error' ? 'text-red-400' :
+                  dubbingStatus.state === 'unsupported' ? 'text-orange-400' :
+                  'text-gray-400'
+                }`}>
+                  Status: {dubbingStatus.message}
                 </p>
               </div>
-            )}
+              {dubbingStatus.lastTranscript && (
+                <div className="mt-2 text-xs text-gray-400 border-t border-gray-700 pt-2">
+                  <p><strong>Original:</strong> {dubbingStatus.lastTranscript}</p>
+                  {dubbingStatus.lastTranslation && (
+                    <p className="mt-1"><strong>Translated:</strong> {dubbingStatus.lastTranslation}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-4 p-4 bg-gray-800/50 rounded border border-gray-700">
             <p className="text-xs text-gray-400 mb-2">
-              <strong>How it works:</strong>
+              <strong>How it works (Demo Mode):</strong>
             </p>
             <ol className="text-xs text-gray-400 list-decimal ml-4 space-y-1">
-              <li>Captures audio from YouTube stream in real-time</li>
-              <li>Transcribes speech using Web Speech Recognition API</li>
-              <li>Translates to target language via Translation API</li>
-              <li>Synthesizes translated speech using Web Speech Synthesis</li>
-              <li><strong>All processing happens in ~1-2 seconds</strong></li>
+              <li>Uses YouTube caption tracks when available (browser API)</li>
+              <li>Translates caption text to target language (MyMemory API)</li>
+              <li>Synthesizes translated speech (Web Speech Synthesis API)</li>
+              <li><strong>Translation + TTS latency: ~1-2 seconds</strong></li>
             </ol>
+            <p className="text-xs text-yellow-300 mt-3 bg-yellow-900/20 p-2 rounded border border-yellow-700">
+              <strong>⚠️ Demo Limitation:</strong> This demo uses YouTube captions (when available).
+              For production real-time audio dubbing, the project requires a browser extension with
+              local Whisper model (see CLAUDE.md for full architecture).
+            </p>
+            <p className="text-xs text-blue-300 mt-2">
+              Click "Test Dubbing" to hear sample translations!
+            </p>
           </div>
         </div>
 
@@ -307,7 +383,7 @@ export default function HomePage() {
           <div className="bg-gray-800 p-4 rounded-lg">
             <h3 className="font-bold mb-2">🎙️ Real-Time Dubbing</h3>
             <p className="text-sm text-gray-400">
-              Instant translation to 11+ languages with <1-2s latency
+              Instant translation to 11+ languages with {'<'}1-2s latency
             </p>
           </div>
         </div>
