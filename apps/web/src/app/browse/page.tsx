@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+// API Configuration from environment variables
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 interface Channel {
   id: string;
   name: string;
@@ -34,8 +37,8 @@ export default function BrowsePage() {
   useEffect(() => {
     // Fetch countries and topics
     Promise.all([
-      fetch('http://localhost:3001/api/v1/channels/countries').then(r => r.json()),
-      fetch('http://localhost:3001/api/v1/channels/topics').then(r => r.json()),
+      fetch(`${API_URL}/api/v1/channels/countries`).then(r => r.json()),
+      fetch(`${API_URL}/api/v1/channels/topics`).then(r => r.json()),
     ]).then(([countriesData, topicsData]) => {
       setCountries(countriesData.countries);
       setTopics(topicsData.topics);
@@ -45,7 +48,7 @@ export default function BrowsePage() {
   useEffect(() => {
     // Fetch channels with filters
     setLoading(true);
-    let url = 'http://localhost:3001/api/v1/channels?limit=20';
+    let url = `${API_URL}/api/v1/channels?limit=20`;
     if (selectedCountry) url += `&country=${selectedCountry}`;
     if (selectedTopic) url += `&topic=${selectedTopic}`;
 

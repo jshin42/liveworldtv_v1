@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { DubbingService, DubbingConfig, DubbingStatus } from '../lib/dubbing/DubbingService';
 
+// API Configuration from environment variables
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 interface Channel {
   id: string;
   name: string;
@@ -60,7 +63,7 @@ export default function HomePage() {
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
     // Fetch random channel
-    fetch('http://localhost:3001/api/v1/channels/random')
+    fetch(`${API_URL}/api/v1/channels/random`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch channel');
         return res.json();
@@ -366,7 +369,7 @@ export default function HomePage() {
             </a>
             {' | '}
             <a
-              href="http://localhost:3001/api/docs"
+              href={`${API_URL}/api/docs`}
               target="_blank"
               className="text-blue-400 hover:text-blue-300"
             >
