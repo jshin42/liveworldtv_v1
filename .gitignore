@@ -8,12 +8,12 @@ node_modules/
 *.lcov
 
 # Next.js
-/.next/
+.next/
 /out/
 
 # Production build
 /build
-/dist
+dist/
 
 # Environment variables
 .env*
