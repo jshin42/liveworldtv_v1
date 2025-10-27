@@ -1,0 +1,35 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm run start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1
+
+# Health check configuration
+[[healthchecks]]
+path = "/health"
+timeout = 10
+interval = 30
+
+[[healthchecks]]
+path = "/v1/channels/stats/count"
+timeout = 15
+interval = 60
+
+# Environment variables (set via Railway CLI or dashboard)
+[env]
+NODE_ENV = { default = "production" }
+PORT = { default = "3001" }
+
+# Resource limits (Free tier)
+[resources]
+# Free tier: 512MB RAM, 1 vCPU, 1GB disk
+# Upgrade to Hobby: 8GB RAM, 4 vCPU, 100GB disk
+
+# Networking
+[networking]
+# Railway will automatically provision a public domain
+# Format: <project-name>.railway.app

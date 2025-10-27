@@ -3,6 +3,8 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16
+    container_name: liveworldtv-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: liveworldtv
       POSTGRES_USER: liveworldtv
@@ -12,15 +14,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./tools/migrations/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U liveworldtv']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - liveworldtv
 
   redis:
     image: redis:7-alpine
+    container_name: liveworldtv-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - liveworldtv
 
@@ -28,19 +43,30 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    container_name: liveworldtv-api
+    restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
       DATABASE_URL: postgresql://liveworldtv:liveworldtv@postgres:5432/liveworldtv
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
+      PORT: 3001
+      CORS_ORIGINS: http://localhost:3000
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
       - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - liveworldtv
 
@@ -48,17 +74,21 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+    container_name: liveworldtv-web
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NODE_ENV: development
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     volumes:
       - ./apps/web:/app/apps/web
       - ./packages:/app/packages
       - /app/node_modules
+      - /app/apps/web/.next
     networks:
       - liveworldtv
 
