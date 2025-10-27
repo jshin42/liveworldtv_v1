@@ -1,5 +1,6 @@
 import { Module, Controller, Get } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Controller()
 class AppController {
@@ -9,6 +10,7 @@ class AppController {
       message: 'LiveWorldTV API',
       version: '0.1.0',
       status: 'running',
+      channels: 20,
       timestamp: new Date().toISOString(),
     };
   }
@@ -29,6 +31,7 @@ class AppController {
       isGlobal: true,
       envFilePath: '.env',
     }),
+    CatalogModule,
   ],
   controllers: [AppController],
 })

@@ -1,5 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
     "module": "CommonJS",
@@ -11,8 +10,15 @@
     "noEmit": false,
     "strictPropertyInitialization": false,
     "skipLibCheck": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "strict": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@liveworldtv/shared-types": ["../../packages/shared-types/src"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "src/**/*.disabled/**", "src/*.disabled/**"]
+  "exclude": ["dist", "node_modules", "**/*.disabled/**"]
 }
