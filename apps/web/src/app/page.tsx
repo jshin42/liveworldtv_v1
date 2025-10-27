@@ -15,10 +15,26 @@ interface Channel {
   isLive: boolean
 }
 
+// API Response type
+interface ApiChannel {
+  id: string
+  name: string
+  country: string
+  sourceType: string
+  sourceUrl: string
+  youtubeChannelId?: string
+  description?: string
+  thumbnailUrl?: string
+  languageCode: string
+  active: boolean
+  verified: boolean
+}
+
 export default function Home() {
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadNewsChannels()
@@ -26,9 +42,61 @@ export default function Home() {
 
   const loadNewsChannels = async () => {
     try {
-      // For now, use mock data that matches NBC News quality
-      // TODO: Replace with real API call once backend is fully working
-      const mockChannels: Channel[] = [
+      setLoading(true)
+      setError(null)
+
+      // Fetch US and UK channels from API
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const [usResponse, ukResponse] = await Promise.all([
+        fetch(`${apiUrl}/v1/channels?country=US&topic=NEWS`),
+        fetch(`${apiUrl}/v1/channels?country=UK&topic=NEWS`)
+      ])
+
+      if (!usResponse.ok || !ukResponse.ok) {
+        throw new Error('Failed to fetch channels from API')
+      }
+
+      const usData = await usResponse.json()
+      const ukData = await ukResponse.json()
+
+      // Transform API data to UI format
+      const allChannels: Channel[] = [
+        ...usData.data.channels.map((ch: ApiChannel) => ({
+          id: ch.id,
+          name: ch.name,
+          country: ch.country,
+          sourceUrl: ch.sourceUrl,
+          thumbnailUrl: ch.thumbnailUrl,
+          description: ch.description,
+          isLive: ch.active
+        })),
+        ...ukData.data.channels.map((ch: ApiChannel) => ({
+          id: ch.id,
+          name: ch.name,
+          country: ch.country,
+          sourceUrl: ch.sourceUrl,
+          thumbnailUrl: ch.thumbnailUrl,
+          description: ch.description,
+          isLive: ch.active
+        }))
+      ]
+
+      setChannels(allChannels)
+
+      // Auto-play: Select first US channel by default
+      if (allChannels.length > 0) {
+        const firstUsChannel = allChannels.find(ch => ch.country === 'US') || allChannels[0]
+        setCurrentChannel(firstUsChannel)
+      }
+
+      setLoading(false)
+    } catch (error) {
+      console.error('Failed to load channels:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load channels')
+      setLoading(false)
+
+      // Fallback to mock data if API fails
+      const fallbackChannels: Channel[] = [
         {
           id: '1',
           name: 'NBC News Now',
@@ -37,33 +105,10 @@ export default function Home() {
           description: 'Breaking news and top stories from NBC News',
           thumbnailUrl: '/images/nbc-news-logo.png',
           isLive: true
-        },
-        {
-          id: '2', 
-          name: 'CNN',
-          country: 'US',
-          sourceUrl: 'https://www.youtube.com/embed/live_stream?channel=UCupvZG-5ko_eiXAupbDfxWw',
-          description: 'CNN live breaking news coverage',
-          thumbnailUrl: '/images/cnn-logo.png', 
-          isLive: true
-        },
-        {
-          id: '3',
-          name: 'BBC News',
-          country: 'UK',
-          sourceUrl: 'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',
-          description: 'BBC News live coverage from around the world',
-          thumbnailUrl: '/images/bbc-logo.png',
-          isLive: true
         }
       ]
-
-      setChannels(mockChannels)
-      setCurrentChannel(mockChannels[0]) // Start with NBC News to match screenshot
-      setLoading(false)
-    } catch (error) {
-      console.error('Failed to load channels:', error)
-      setLoading(false)
+      setChannels(fallbackChannels)
+      setCurrentChannel(fallbackChannels[0])
     }
   }
 
