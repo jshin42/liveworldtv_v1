@@ -21,9 +21,10 @@ describe('CatalogController', () => {
     description: 'NBC News Now - Breaking news and live coverage',
     active: true,
     verified: true,
-    tags: ['news', 'breaking', 'live'],
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
+    metadata: { tags: ['news', 'breaking', 'live'] },
+    firstSeen: new Date('2024-01-01'),
+    lastSeen: new Date('2024-01-01'),
+    contentFingerprint: 'nbc-news-now-fingerprint',
   };
 
   const mockStream: LiveStream = {
@@ -35,6 +36,7 @@ describe('CatalogController', () => {
     dvrWindowSec: 3600,
     viewerCount: 12500,
     peakViewerCount: 15000,
+    lastChecked: new Date(),
     qualityMetrics: {
       avgBitrate: 5000000,
       resolution: '1080p',
@@ -331,7 +333,6 @@ describe('CatalogController', () => {
     it('should initiate channel discovery for country', async () => {
       const mockResult = {
         message: 'Discovery initiated for US',
-        scheduled: true,
       };
       jest.spyOn(service, 'discoverChannels').mockResolvedValue(mockResult);
 
@@ -344,7 +345,6 @@ describe('CatalogController', () => {
     it('should support discovery with specific source', async () => {
       const mockResult = {
         message: 'Discovery initiated for UK from youtube',
-        scheduled: true,
       };
       jest.spyOn(service, 'discoverChannels').mockResolvedValue(mockResult);
 
@@ -360,7 +360,6 @@ describe('CatalogController', () => {
       for (const country of countries) {
         jest.spyOn(service, 'discoverChannels').mockResolvedValue({
           message: `Discovery initiated for ${country}`,
-          scheduled: true,
         });
 
         await controller.discoverChannels(country);
@@ -374,7 +373,6 @@ describe('CatalogController', () => {
       for (const source of sources) {
         jest.spyOn(service, 'discoverChannels').mockResolvedValue({
           message: `Discovery from ${source}`,
-          scheduled: true,
         });
 
         await controller.discoverChannels('US', source);
