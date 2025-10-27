@@ -1,5 +1,6 @@
 import { Module, Controller, Get } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Controller()
 class AppController {
@@ -29,6 +30,7 @@ class AppController {
       isGlobal: true,
       envFilePath: '.env',
     }),
+    CatalogModule,
   ],
   controllers: [AppController],
 })
