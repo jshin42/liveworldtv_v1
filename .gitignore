@@ -76,3 +76,5 @@ apps/extension/*.zip
 # Temporary folders
 tmp/
 temp/*.disabled/
+apps/api/dist/
+apps/web/.next/
